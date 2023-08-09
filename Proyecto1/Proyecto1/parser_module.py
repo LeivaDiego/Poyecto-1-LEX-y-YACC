@@ -1,47 +1,12 @@
 # Importacion de librerias necesarias
-from ply import lex
 from ply import yacc
-from graphviz import Digraph
 
+# Importa los tokens del modulo lexer
+from lexer_module import tokens
 
-# Definicion de los tokens (simbolos lexicos)---------------------------------------------
+# Importa la definicion de nodo y el plot tree
+from graph_module import Node
 
-# Se definen los simbolos lexicos que el lexer reconocera
-tokens = (
-    'VARIABLE',         # Variables proposicionales
-    'NEGATION',         # Operador de negacion (~)
-    'CONJUNCTION',      # Operador de conjuncion (^)
-    'DISJUNCTION',      # Operador de disjuncion (o)
-    'IMPLICATION',      # Operador de implicacion (=>)
-    'BICONDITIONAL',    # Operador de equivalencia (<=>)
-    'LPAREN',           # Parentesis izquierdo
-    'RPAREN',           # Parentesis derecho
-    'CONSTANT',         # Constante 0 o 1 para valor de verdad verdadero
-    )
-
-
-# Expresiones regulares para los tokens
-# cada linea de "t_nombre del token" define una expresion regular que representa como 
-# se reconocera el token en el string de entrada
-t_NEGATION = r'\~'
-t_CONJUNCTION = r'\^'
-t_DISJUNCTION = r'o'
-t_IMPLICATION = r'=>'
-t_BICONDITIONAL = r'<=>'
-t_LPAREN = r'\('
-t_RPAREN = r'\)'
-t_VARIABLE = r'[p-z]'   
-t_CONSTANT = r'[01]'
-
-# Ignorar saltos de linea
-def t_ignore_newline(t):
-    r'\n+'
-    t.lexer.lineno += t.value.count('\n')
-    
-# Manejo de errores lexicos
-def t_error(t):
-    print(f'Illegal character {t.value[0]!r}')
-    t.lexer.skip(1)
 
 # Precedencia de simbolos
 # Esto define la precedencia de simbolos en caso existan expresiones ambiguas
@@ -52,27 +17,12 @@ precedence = (
     ('left', 'NEGATION')
 )
 
-# Construccion del analizador lexico
-lexer = lex.lex()
-
-
-
-
-# Definicion de los nodos del grafo dirigido
-# Clase que representa un nodo del arbol 
-class Node:
-    def __init__(self, value, left=None, right=None):
-        self.value = value
-        self.left = left
-        self.right = right
-
 
 
 # Reglas de la gramatica------------------------------------------------------------------
 
 # Estas funciones definen la estructura de la gramatica y como se construira el arbol 
 # a partir de la entrada.
-
 
 # Para las variables o constantes
 def p_expression_value(p):
@@ -117,45 +67,3 @@ def p_error(p):
 
 # Construccion del Parser
 parser = yacc.yacc()
-
-
-# Generador del grafo dirigido de la expresion--------------------------------------------
-
-# Para manejar la expresion <=> 
-def format_label(value):
-    # Si el valor es <=>, devolverlo encerrado en comillas
-    if value == '<=>':
-        return '\<=>'
-    # En caso contrario, devolver el valor tal cual
-    return value
-
-# Esta funcion es la que toma el arbol y genera un grafo dirigido usando Graphviz 
-# (Herramienta vista en teoria de la computacion)
-def plot_tree(root, graph=None):
-    
-    # Si no se da un grafo existente, se inicializa uno nuevo
-    if graph is None:
-        graph = Digraph()
-        # Se crea un nodo en el grafo para el nodo raiz del arbol
-        graph.node(name=str(id(root)), label=format_label(root.value))
-    
-    # Si el nodo actual tiene un hijo izquierdo, se agrega al grafo
-    if root.left:
-        # Se crea un nodo para el hijo izquierdo
-        graph.node(name=str(id(root.left)), label=format_label(root.left.value))
-        # Se crea una arista entre el nodo actual y su hijo izquierdo
-        graph.edge(str(id(root)), str(id(root.left)))
-        # Llamada recursiva para seguir construyendo el grafo con el hijo izquierdo
-        plot_tree(root.left, graph)
-    
-    # Si el nodo actual tiene un hijo derecho, se agrega al grafo
-    if root.right:
-        # Se crea un nodo para el hijo derecho
-        graph.node(name=str(id(root.right)),label=format_label(root.right.value))
-        # Se crea una arista entre el nodo actual y su hijo derecho
-        graph.edge(str(id(root)), str(id(root.right)))
-        # Llamada recursiva para seguir construyendo el grafo con el hijo derecho
-        plot_tree(root.right, graph)
-    
-    # Devuelve el grafo construido
-    return graph

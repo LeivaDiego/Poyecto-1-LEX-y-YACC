@@ -1,5 +1,7 @@
 # Importacion del analizador lexico, el parser y el generador del grafo del modulo
-from parser_module import lexer, parser, plot_tree
+from parser_module import parser
+from lexer_module import lexer
+from graph_module import plot_tree
 
 # Declaracion de las expresiones a evaluar
 expressions = [
