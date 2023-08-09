@@ -1,7 +1,7 @@
 from .ply import lex
 
 # Definición de los tokens (símbolos léxicos)
-tokens = [
+tokens = (
     'VAR',              # Variables proposicionales
     'NOT',              # Operador de negación (~)
     'AND',              # Operador de conjunción (^)
@@ -12,7 +12,7 @@ tokens = [
     'RPAREN',           # Paréntesis derecho
     'TRUE',             # Constante 0 para valor de verdad falso
     'FALSE',            # Constante 1 para valor de verdad verdadero
-]
+)
 
 # Tokens
 t_VAR = r'[p-z]'
