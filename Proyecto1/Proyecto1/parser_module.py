@@ -1,100 +1,125 @@
-from ply import yacc
 from ply import lex
+from ply import yacc
 from graphviz import Digraph
 
 
-# Definicion de los tokens (símbolos lexicos)---------------------------------------------
+# Definicion de los tokens (simbolos lexicos)---------------------------------------------
 tokens = (
-    'VAR',              # Variables proposicionales
-    'NOT',              # Operador de negacion (~)
-    'AND',              # Operador de conjuncion (^)
-    'OR',               # Operador de disjuncion (o)
-    'IMPLIES',          # Operador de implicacion (=>)
-    'EQUIVALENCE',      # Operador de equivalencia (<=>)
+    'VARIABLE',         # Variables proposicionales
+    'NEGATION',         # Operador de negacion (~)
+    'CONJUNCTION',      # Operador de conjuncion (^)
+    'DISJUNCTION',      # Operador de disjuncion (o)
+    'IMPLICATION',      # Operador de implicacion (=>)
+    'BICONDITIONAL',    # Operador de equivalencia (<=>)
     'LPAREN',           # Parentesis izquierdo
     'RPAREN',           # Parentesis derecho
-    'TRUE',             # Constante 0 para valor de verdad falso
-    'FALSE',            # Constante 1 para valor de verdad verdadero
-)
+    'CONSTANT',         # Constante 0 o 1 para valor de verdad verdadero
+    )
 
-# Tokens
-t_VAR = r'[p-z]'
-t_NOT = r'~'
-t_AND = r'\^'
-t_OR = r'o'
-t_IMPLIES = r'=>'
-t_EQUIVALENCE = r'<=>'
+
+# Expresiones regulares para los tokens
+t_NEGATION = r'\~'
+t_CONJUNCTION = r'\^'
+t_DISJUNCTION = r'o'
+t_IMPLICATION = r'=>'
+t_BICONDITIONAL = r'<=>'
 t_LPAREN = r'\('
 t_RPAREN = r'\)'
+t_VARIABLE = r'[p-z]'   
+t_CONSTANT = r'[01]'
 
-def t_TRUE(t):
-    r'1'
-    t.value = True
-    return t
-
-def t_FALSE(t):
-    r'0'
-    t.value = False
-    return t
-
-t_ignore = " \t"
-
+# Ignorar saltos de linea
+def t_ignore_newline(t):
+    r'\n+'
+    t.lexer.lineno += t.value.count('\n')
+    
+# Manejo de errores lexicos
 def t_error(t):
-    print(f"Caracter no valido: '{t.value[0]}'")
+    print(f'Illegal character {t.value[0]!r}')
     t.lexer.skip(1)
 
+# Precedencia de simbolos
+precedence = (
+    ('left', 'IMPLICATION', 'BICONDITIONAL'),
+    ('left', 'DISJUNCTION'),
+    ('left', 'CONJUNCTION'),
+    ('left', 'NEGATION')
+)
 
+# Construccion del analizador lexico
 lexer = lex.lex()
 
 
 
-# Definiciones de la gramatica para el parser---------------------------------------------
-def p_formula_var(p):
-    '''formula : VAR
-               | TRUE
-               | FALSE'''
-    p[0] = p[1]
 
-def p_formula_not(p):
-    'formula : NOT formula'
-    p[0] = ('not', p[2])
+# Definicion de los nodos del grafo dirigido
+class Node:
+    def __init__(self, value, left=None, right=None):
+        self.value = value
+        self.left = left
+        self.right = right
 
-def p_formula_binop(p):
-    '''formula : formula AND formula
-               | formula OR formula
-               | formula IMPLIES formula
-               | formula EQUIVALENCE formula'''
-    p[0] = (p[2], p[1], p[3])
 
-def p_formula_parens(p):
-    'formula : LPAREN formula RPAREN'
+
+# Reglas de la gramatica------------------------------------------------------------------
+
+# Para las variables o constantes
+def p_expression_value(p):
+    '''
+    expression : VARIABLE
+                | CONSTANT
+    '''
+    p[0] = Node(p[1])
+
+# Para las negaciones
+def p_expression_negation(p):
+    '''
+    expression : NEGATION expression
+    '''
+    node = Node(p[1])
+    node.right = p[2]
+    p[0] = node
+
+# Para los parentesis
+def p_factor_grouped(p):
+    '''
+    expression : LPAREN expression RPAREN
+    '''
     p[0] = p[2]
 
+# Para las expresiones con operadores logicos de AND, OR, IMPLIES, BICONDITIONAL
+def p_expression(p):
+    '''
+    expression : expression CONJUNCTION expression
+               | expression DISJUNCTION expression
+               | expression IMPLICATION expression
+               | expression BICONDITIONAL expression
+    '''
+    node = Node(p[2])
+    node.left = p[1]
+    node.right = p[3]
+    p[0] = node
+
+# Manejo de errores
 def p_error(p):
-    print(f"Syntax error at '{p.value}'")
+    print(f'Syntax error at {p.value!r}')
 
+# Construccion del Parser
 parser = yacc.yacc()
-
 
 
 # Generador del grafo dirigido de la expresion--------------------------------------------
 
-def plot_ast(ast, index):
-    dot = Digraph(comment=f'AST for formula {index}')
-
-    def add_nodes(node, parent=None):
-        if not node:
-            return
-        label = node[0]
-        dot.node(str(node), label)
-        if parent:
-            dot.edge(str(parent), str(node))
-        for child in node[1:]:
-            add_nodes(child, node)
-
-    add_nodes(ast)
-    dot.view(filename=f"digraph_#{index}.gv", cleanup=True)
-
-def parse_and_plot(formula, index):
-    result = parser.parse(formula, lexer=lexer)
-    plot_ast(result, index)
+def plot_tree(root, graph=None):
+    if graph is None:
+        graph = Digraph()
+        graph.node(name=str(id(root)), label=root.value)
+    if root.left:
+        graph.node(name=str(id(root.left)), label=root.left.value)
+        graph.edge(str(id(root)), str(id(root.left)))
+        plot_tree(root.left, graph)
+    if root.right:
+        graph.node(name=str(id(root.right)), label=root.right.value)
+        graph.edge(str(id(root)), str(id(root.right)))
+        plot_tree(root.right, graph)
+    return graph

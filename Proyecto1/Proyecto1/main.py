@@ -1,6 +1,8 @@
-import parser_module
+from parser_module import lexer, parser, plot_tree
 
-formulas = [
+
+
+expressions = [
     "p",
     "~~~q",
     "(p^q)",
@@ -11,4 +13,15 @@ formulas = [
     "(~(p^(qor))os)"
 ]
 
-parser_module.parse_and_plot(formulas[6], 6)
+for index, expr in enumerate(expressions):
+    lexer.input(expr)
+    resultado = parser.parse(expr)
+    tree_graph = plot_tree(resultado)
+    tree_graph.view(filename=f"syntax_tree{index}.gv")
+
+    
+
+
+
+
+
