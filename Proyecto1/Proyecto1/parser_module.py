@@ -4,7 +4,7 @@ from ply import yacc
 # Importa los tokens del modulo lexer
 from lexer_module import tokens
 
-# Importa la definicion de nodo y el plot tree
+# Importa la definicion de nodo
 from graph_module import Node
 
 
@@ -16,7 +16,6 @@ precedence = (
     ('left', 'CONJUNCTION'),
     ('left', 'NEGATION')
 )
-
 
 
 # Reglas de la gramatica------------------------------------------------------------------
