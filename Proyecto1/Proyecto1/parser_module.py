@@ -43,6 +43,7 @@ def t_error(t):
     print(f"Caracter no valido: '{t.value[0]}'")
     t.lexer.skip(1)
 
+
 lexer = lex.lex()
 
 
@@ -92,7 +93,7 @@ def plot_ast(ast, index):
             add_nodes(child, node)
 
     add_nodes(ast)
-    dot.view(filename=f"ast_graph_{index}.gv", cleanup=True)
+    dot.view(filename=f"digraph_#{index}.gv", cleanup=True)
 
 def parse_and_plot(formula, index):
     result = parser.parse(formula, lexer=lexer)
