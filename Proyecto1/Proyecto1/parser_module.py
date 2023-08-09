@@ -1,5 +1,5 @@
-from .ply import yacc
-from .ply import lex
+from ply import yacc
+from ply import lex
 from graphviz import Digraph
 
 
@@ -72,7 +72,7 @@ def p_formula_parens(p):
 def p_error(p):
     print(f"Syntax error at '{p.value}'")
 
-parser = yacc()
+parser = yacc.yacc()
 
 
 
